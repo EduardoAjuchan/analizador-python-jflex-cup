@@ -1,0 +1,39 @@
+/* Archivo: parser.cup */
+package analizador;
+
+import java_cup.runtime.*;
+import static analizador.sym.*;
+
+parser code {:
+    public void syntax_error(Symbol s) {
+        System.err.println("Syntax error at line " + s.left + ": Unexpected token '" + s.value + "'");
+    }
+:};
+
+terminal String IDENTIFIER, STRING, OPERATOR, SYMBOL, KEYWORD;
+terminal String NUMBER, COMMENT;
+terminal String WHITESPACE, NEWLINE;
+terminal EOF;
+
+non terminal program;
+non terminal stmt_list;
+non terminal stmt;
+non terminal expr;
+
+start with program;
+
+program ::= stmt_list;
+
+stmt_list ::= stmt_list stmt
+            | stmt;
+
+stmt ::= KEYWORD:kw IDENTIFIER:id SYMBOL:"(" expr SYMBOL:")" SYMBOL:":" stmt_list
+       | KEYWORD:kw expr
+       | IDENTIFIER OPERATOR expr
+       | expr;
+
+expr ::= NUMBER
+       | STRING
+       | IDENTIFIER
+       | expr OPERATOR expr
+       | SYMBOL:"(" expr SYMBOL:")";
