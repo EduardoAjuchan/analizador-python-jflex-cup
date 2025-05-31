@@ -13,7 +13,8 @@ public class PythonParser {
         Set<String> definedFunctions = new HashSet<>();
         Set<String> calledFunctions = new HashSet<>();
         Set<String> reservedWords = new HashSet<>(Arrays.asList(
-                "def", "return", "if", "else", "for", "while", "None", "True", "False", "print", "and", "or", "not"
+                "def", "return", "if", "else", "for", "while", "None", "True", "False",
+                "print", "and", "or", "not", "input", "float", "int", "str", "len", "lower"
         ));
 
         for (int i = 0; i < tokens.size(); i++) {
@@ -21,6 +22,8 @@ public class PythonParser {
 
             // Errores léxicos
             if (token.type == ERROR) {
+                // Ignorar retorno de carro CR (\r)
+                if (token.value.equals("\r")) continue;
                 errors.add(new SyntaxError(token.line, token.column,
                         "Carácter no reconocido: '" + token.value + "'", token.value.length()));
                 continue;
@@ -84,25 +87,10 @@ public class PythonParser {
             // Asignación de variables
             if (token.type == IDENTIFIER) {
                 if (reservedWords.contains(token.value)) {
-                    errors.add(new SyntaxError(token.line, token.column,
-                            "Uso inválido de palabra reservada como nombre de variable: '" + token.value + "'", token.value.length()));
-                    continue;
+                    continue; // no marcar como error si es reservada
                 }
-
-                // Si está asignando valor a una variable
                 if (i + 1 < tokens.size() && tokens.get(i + 1).type == SYMBOL && tokens.get(i + 1).value.equals("=")) {
                     definedVariables.add(token.value);
-                }
-
-                // Si está usando una variable, no marcar error si ya fue definida
-                else if (!definedVariables.contains(token.value) && !definedFunctions.contains(token.value)) {
-                    boolean esLlamadoFuncion = (i + 1 < tokens.size() && tokens.get(i + 1).value.equals("("));
-                    if (esLlamadoFuncion) {
-                        calledFunctions.add(token.value);
-                    } else {
-                        // Por ahora ignoramos las variables no definidas para evitar falsos positivos
-                        // Puedes reactivar esta validación cuando quieras más rigurosidad
-                    }
                 }
             }
 
@@ -117,14 +105,12 @@ public class PythonParser {
             }
         }
 
-        // Llamadas a funciones no definidas
         for (String llamada : calledFunctions) {
             if (!definedFunctions.contains(llamada) && !reservedWords.contains(llamada)) {
                 errors.add(new SyntaxError(0, 0, "Función llamada pero no definida: '" + llamada + "'", llamada.length()));
             }
         }
 
-        // Símbolos sin cerrar
         while (!bracketStack.isEmpty()) {
             Token open = bracketStack.pop();
             errors.add(new SyntaxError(open.line, open.column,
@@ -153,7 +139,6 @@ public class PythonParser {
         int idx = i + 1;
         Token nombre = null, parA = null, parC = null, dosPuntos = null;
 
-        // Buscar nombre de la función
         while (idx < tokens.size()) {
             Token t = tokens.get(idx);
             if (t.type == IDENTIFIER) {
@@ -164,7 +149,6 @@ public class PythonParser {
             idx++;
         }
 
-        // Buscar paréntesis balanceados
         int abiertos = 0;
         while (idx < tokens.size()) {
             Token t = tokens.get(idx);
@@ -182,7 +166,6 @@ public class PythonParser {
             idx++;
         }
 
-        // Buscar dos puntos
         while (idx < tokens.size()) {
             Token t = tokens.get(idx);
             if (t.type == SYMBOL && t.value.equals(":")) {

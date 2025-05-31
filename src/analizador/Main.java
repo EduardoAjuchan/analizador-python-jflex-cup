@@ -18,7 +18,7 @@ public class Main {
     }
 
     public static void crearVentana() {
-        JFrame frame = new JFrame("Analizador de Python - Léxico y Sintáctico");
+        JFrame frame = new JFrame("Analizador de Python - Léxico y Semántico");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(900, 700);
 
@@ -53,7 +53,7 @@ public class Main {
                 }
 
                 try {
-                    String codigo = Files.readString(archivo.toPath());
+                    String codigo = Files.readString(archivo.toPath()).replace("\r", ""); // Eliminar \r
                     List<Token> tokens = PythonLexer.tokenize(codigo);
                     List<SyntaxError> errores = PythonParser.checkSyntax(tokens);
 
